@@ -2,12 +2,13 @@ from pygame import *
 from pygame.math import Vector2
 from gamesprite import *
 from const import *
-class Player(Gamesprite):
-    def __init__(self, img, x, y, size, speed =5):
+class Enemy(Gamesprite):
+    def __init__(self, img, x, y, size, speed =3):
         super().__init__(img, x, y, size)
         self.speed = speed
-        self.acc = 1
-        self.dec = 2
+        self.run = False
+        self.acc = 0.15
+        self.dec = 0.3
         self.maxspeed = 5
         self.v = Vector2(0,0)
         self.pos = Vector2(x,y)
@@ -38,7 +39,6 @@ class Player(Gamesprite):
                     break
                 self.pos.x -= step
                 self.rect.centerx = int(self.pos.x)
-            self.v.x = 0
     
     def collide_walls_y(self, wall):
         if sprite.collide_mask(self, wall):
@@ -48,34 +48,27 @@ class Player(Gamesprite):
                     break
                 self.pos.y -= step
                 self.rect.centery = int(self.pos.y)
-            self.v.y = 0
-    def updatepony(self, window_rect, wall, up=K_w, down=K_s, left=K_a, right=K_d):
-        direction = self.getdirection(up, down, left, right)
 
-        # Физика: ускорение и инерция
-        if direction.length() > 0:
-            direction.normalize_ip()
-            self.v += direction * self.acc
-        else:
-            if self.v.length_squared() > 0:
-                if self.v.length() < self.dec:
-                    self.v = Vector2(0, 0)
-                else:
-                    self.v -= self.v.normalize() * self.dec
+    def update(self, player_pos, walls, window_rect):
+        if not self.run: return
+        
 
-        if self.v.length_squared() > self.maxspeed**2:
-            self.v.scale_to_length(self.maxspeed)
+        direction = Vector2(player_pos)- self.pos
+        distance = direction.length()
+        if distance < 15:
+            return
+        direction.normalize_ip()
 
-        self.pos.x += self.v.x
+        movex=direction.x*self.speed
+        self.pos.x += movex
         self.rect.centerx = int(self.pos.x)
+        self.collide_walls_x(walls)
 
-        self.collide_walls_x(wall)
-
-        self.pos.y += self.v.y
+        movey=direction.y*self.speed
+        self.pos.y += movey
         self.rect.centery = int(self.pos.y)
-
-        self.collide_walls_y(wall)
+        self.collide_walls_y(walls)
 
         self.rect.clamp_ip(window_rect)
-        self.pos.x, self.pos.y = self.rect.center
-
+        self.pos.x,self.pos.y=self.rect.center
+    
